@@ -25,22 +25,34 @@ export const createSong = async (req, res) => {
       albumId: albumId || null,
     });
 
+    await song.save()
+
     if (albumId) {
       await Album.findByIdAndUpdate(albumId, {
         $push: { songs: song._id },
       });
     }
-    return successResponse(res, "Song Upload Successful", song, 200);
+    return successResponse(res, "Song Upload Successful", 200, song);
   } catch (error) {
-    console.error(error)
-    return errorResponse(res, "Song Upload Failed", error, 500);
+    console.error(error);
+    return errorResponse(res, "Song Upload Failed", 500, error);
   }
 };
 
 export const deleteSong = async (req, res) => {
   try {
-    
+    const { id } = req.params;
+    const song = await Song.findById(id);
+    if (!song) return errorResponse(res, "Song Not Found", 404);
+    if (song.albumId) {
+      await Album.findByIdAndUpdate(song.albumId, {
+        $pull: { songs: song._id },
+      });
+    }
+    await Song.findByIdAndDelete(id);
+    return successResponse(res, "Song Delete Successful", 200);
   } catch (error) {
-    
+    console.error(error);
+    return errorResponse(res, "Song Delete Failed", 500, error);
   }
-}
+};
