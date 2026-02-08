@@ -1,9 +1,20 @@
 import { Router } from "express";
+import {
+  createAlbum,
+  deleteAlbum,
+  getAlbumById,
+  getAllAlbums,
+} from "../controller/album.controller.js";
+import { requireAdmin } from "../middleware/auth.middleware.js";
+import { requireAuth } from "@clerk/express";
 
-const router = Router()
+const router = Router();
 
-router.get('/', (req,res)=>{
-  res.send('User route')
-})
+router.get("/", getAllAlbums);
+router.get("/:id", getAlbumById);
 
-export default router
+router.use(requireAuth(), requireAdmin);
+router.post("/create", createAlbum);
+router.delete("/delete/:id", deleteAlbum);
+
+export default router;
