@@ -4,28 +4,40 @@ const songSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: true
+      required: true,
     },
-    artist: {
+    performer: {
       type: String,
-      required: true
+      required: true,
+    },
+    writer: {
+      type: String,
+      required: true,
+    },
+    publisher: {
+      type: String,
+      required: true,
     },
     imageUrl: {
       type: String,
-      required: true
+      required: true,
     },
     audioUrl: {
       type: String,
-      required: true
+      required: true,
     },
     duration: {
       type: Number,
-      required: true
+      required: true,
+    },
+    releaseYear: {
+      type: Number,
+      required: true,
     },
     albumId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Album',
-      required: false
+      ref: "Album",
+      required: false,
     },
   },
   { timestamps: true },
