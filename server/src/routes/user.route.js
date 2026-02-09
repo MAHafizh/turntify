@@ -1,10 +1,10 @@
-import { requireAuth, getAuth, clerkClient } from "@clerk/express";
+import { requireAuth } from "@clerk/express";
 import { Router } from "express";
+import { requireAdmin } from "../middleware/auth.middleware.js";
+import { getAllUser } from "../controller/user.controller.js";
 
 const router = Router();
 
-router.get("/", (req, res) => {
-  res.send("User route");
-});
+router.get("/", requireAuth(), requireAdmin, getAllUser);
 
 export default router;
