@@ -2,9 +2,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { ClerkProvider } from "@clerk/clerk-react";
-// import { BrowserRouter, Routes } from "react-router";
-// import routes from "./routes.tsx";
+import { BrowserRouter } from "react-router";
 import App from "./App.tsx";
+import AuthProviders from "./providers/AuthProviders.tsx";
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -14,8 +14,12 @@ if (!PUBLISHABLE_KEY) {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-      <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
-        <App/>
-      </ClerkProvider>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+      <AuthProviders>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </AuthProviders>
+    </ClerkProvider>
   </StrictMode>,
 );

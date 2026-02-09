@@ -1,40 +1,23 @@
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  SignUpButton,
-  UserButton,
-} from "@clerk/clerk-react";
+import { AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
+import { Routes, Route } from "react-router";
+import Homepage from "./pages/Homepage";
+import AuthCallback from "./pages/AuthCallback";
 
 function App() {
-  // const { isLoaded, isSignedIn, getToken, userId } = useAuth();
-
-  // const handleGetToken = async () => {
-  //   const token = await getToken();
-  //   console.log("JWT:", token);
-  //   console.log("UserId:", userId);
-  // };
-
-  // if (!isLoaded) return <p>Loading...</p>;
-  // if (!isSignedIn) return <p>Belum login</p>;
-
   return (
     <>
-      <p>Hello World</p>
-      <header>
-        {/* Show the sign-in and sign-up buttons when the user is signed out */}
-        <SignedOut>
-          <SignInButton />
-          <SignUpButton />
-        </SignedOut>
-        {/* Show the user button when the user is signed in */}
-        <SignedIn>
-          <UserButton />
-        </SignedIn>
-      </header>
-      {/* <Button onClick={handleGetToken} variant={"outline"}>
-        Ambil token
-      </Button> */}
+      <Routes>
+        <Route path="/" element={<Homepage />} />
+        <Route
+          path="/sso-callback"
+          element={
+            <AuthenticateWithRedirectCallback
+              signUpForceRedirectUrl={"/auth-callback"}
+            />
+          }
+        />
+        <Route path="/auth-callback" element={<AuthCallback />} />
+      </Routes>
     </>
   );
 }
