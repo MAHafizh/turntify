@@ -19,7 +19,7 @@ const playlistSchema = new mongoose.Schema(
         },
         addedBy: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "User"
+          ref: "User",
         },
         addedAt: {
           type: Date,
@@ -30,6 +30,7 @@ const playlistSchema = new mongoose.Schema(
     description: {
       type: String,
       maxlength: 300,
+      required: false,
     },
     owner: {
       type: mongoose.Schema.Types.ObjectId,

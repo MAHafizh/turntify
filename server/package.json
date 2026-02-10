@@ -7,7 +7,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "dotenvx run -- nodemon src/index.js",
-    "start": "dotenvx run -- node src/index.js"
+    "start": "dotenvx run -- node src/index.js",
+    "seed:songs": "node src/seeders/songs.js",
+    "seed:genres": "node src/seeders/genres.js",
+    "seed:albums": "node src/seeders/albums.js"
   },
   "keywords": [],
   "author": "",

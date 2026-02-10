@@ -11,7 +11,7 @@ const validateSongInAlbum = (album, songId) => {
 
 export const getAllAlbums = async (req, res) => {
   try {
-    const albums = await Album.find();
+    const albums = await Album.find().populate("songs.song");
     if (albums.length === 0) {
       return errorResponse(res, "Albums is Empty", 200);
     }
