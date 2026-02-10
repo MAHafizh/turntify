@@ -1,10 +1,8 @@
 import { Library } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
-import PlaylistSkeleton from "./skeletons/PlaylistSkeleton";
+import LibraryAlbum from "./LibraryAlbum";
 
 export default function LibraryMenu() {
-  const isEmpty = false;
-
   return (
     <div className="rounded-sm bg-zinc-900 p-4">
       <div className="flex items-center justify-between">
@@ -13,9 +11,9 @@ export default function LibraryMenu() {
           <h1 className="hidden md:inline">Library</h1>
         </div>
       </div>
-      <ScrollArea className="rounded-md border px-1 py-4 h-[calc(100vh-300px)] border-hidden">
+      <ScrollArea className="rounded-md border h-[calc(100vh-300px)] border-hidden">
         <div className="space-y-2">
-          {isEmpty ? <div>Create Playlist</div> : <PlaylistSkeleton />}
+          <LibraryAlbum/>
         </div>
       </ScrollArea>
     </div>

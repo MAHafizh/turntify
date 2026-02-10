@@ -7,7 +7,7 @@ export default function Navbar() {
   const isAdmin = false;
   return (
     <>
-      <div className="flex items-center justify-between p-4 sticky top-0 bg-zinc-900 backdrop-blur-md z-10 rounded-sm">
+      <div className="flex items-center justify-between p-4 sticky top-0 backdrop-blur-md z-10">
         <div className="flex gap-2 items-center text-white">Spotify Logo</div>
         <div className="flex gap-4 items-center">
           {isAdmin && (

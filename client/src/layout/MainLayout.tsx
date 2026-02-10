@@ -1,5 +1,5 @@
 import { Outlet } from "react-router";
-import Navbar from "@/components/Navbar";
+// import Navbar from "@/components/Navbar";
 import LeftSidebar from "@/layout/components/LeftSidebar";
 import RightSidebar from "@/layout/components/RightSidebar";
 import { Group, Panel, Separator } from "react-resizable-panels";
@@ -9,7 +9,7 @@ export default function MainLayout() {
     <div className="h-screen bg-black text-white flex flex-col">
       <Group orientation="horizontal" className="flex-1 flex h-full p-2">
         {/* LEFT */}
-        <Panel defaultSize="20%" maxSize="40%" minSize="20%">
+        <Panel defaultSize="30%" maxSize="40%" minSize="20%">
           <LeftSidebar />
         </Panel>
 
@@ -17,8 +17,8 @@ export default function MainLayout() {
 
         {/* MAIN */}
         <Panel defaultSize="60%">
-          <div className="m-1 rounded-sm bg-zinc-900 h-[calc(100vh-130px)]">
-            <Navbar />
+          <div className="m-1">
+            {/* <Navbar /> */}
             <Outlet />
           </div>
         </Panel>
