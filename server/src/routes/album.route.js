@@ -15,8 +15,8 @@ router.get("/", getAllAlbums);
 router.get("/:id", getAlbumById);
 
 router.use(requireAuth(), requireAdmin);
-router.post("/create", createAlbum);
-router.delete("/delete/:id", deleteAlbum);
-router.put("/update/:id", updateAlbum);
+router.post("/", createAlbum);
+router.patch("/:id", updateAlbum);
+router.delete("/:id", deleteAlbum);
 
 export default router;

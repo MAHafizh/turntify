@@ -21,8 +21,8 @@ router.get("/trending", getTrendingSongs);
 router.get("/:id", getSongById);
 
 router.use(requireAuth(), requireAdmin);
-router.post("/create", createSong);
-router.delete("/delete/:id", deleteSong);
-router.put("/update/:id", updateSong);
+router.post("/", createSong);
+router.delete("/:id", deleteSong);
+router.patch("/:id", updateSong);
 
 export default router;
