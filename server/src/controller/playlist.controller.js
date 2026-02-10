@@ -131,9 +131,10 @@ export const removeSongFromPlaylist = async (req, res) => {
     const { id, songId } = req.params;
 
     const playlist = await Playlist.findById(id);
+    if (!playlist) return errorResponse(res, "Playlist Not Found", 404);
     const exist = validateSongInPlaylist(playlist, songId);
     if (exist) {
-      const updatePlaylist = await Playlist.findByIdAndUpdate(
+      const updatedPlaylist = await Playlist.findByIdAndUpdate(
         id,
         {
           $pull: { songs: { song: songId } },
@@ -144,7 +145,7 @@ export const removeSongFromPlaylist = async (req, res) => {
         res,
         "Playlist Update Success",
         200,
-        updatePlaylist,
+        updatedPlaylist,
       );
     } else return errorResponse(res, "Song Not Found in Playlist", 404);
   } catch (error) {
