@@ -7,9 +7,7 @@ import { deleteFromCloudinary } from "../utils/DeleteFromCloudinary.js";
 export const getAllSong = async (req, res) => {
   try {
     const songs = await Song.find().sort({ createdAt: -1 });
-    if (songs.length === 0) {
-      return errorResponse(res, "Songs is Empty", 200);
-    }
+    if (songs.length === 0) return errorResponse(res, "Songs is Empty", 200);
     return successResponse(res, "Songs Retrieve Successful", 200, songs);
   } catch (error) {
     console.error(error);
