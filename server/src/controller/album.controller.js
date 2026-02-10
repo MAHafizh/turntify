@@ -4,6 +4,11 @@ import { deleteFromCloudinary } from "../utils/DeleteFromCloudinary.js";
 import { errorResponse, successResponse } from "../utils/response.js";
 import { uploadToCloudinary } from "../utils/UploadToCloudinary.js";
 
+const validateSongInAlbum = (album, songId) => {
+  if (!album) return false;
+  return album.songs.some((s) => s.song && s.song.equals(songId));
+};
+
 export const getAllAlbums = async (req, res) => {
   try {
     const albums = await Album.find();
@@ -20,7 +25,7 @@ export const getAllAlbums = async (req, res) => {
 export const getAlbumById = async (req, res) => {
   try {
     const { id } = req.params;
-    const album = await Album.findById(id).populate("songs");
+    const album = await Album.findById(id).populate("songs.song");
     if (!album) {
       return errorResponse(res, "Albums Not Found", 404);
     }
@@ -34,8 +39,10 @@ export const getAlbumById = async (req, res) => {
 export const createAlbum = async (req, res) => {
   try {
     const { title, artist, releaseYear } = req.body;
-    const imageFile = req.files.imageFile;
-    const imageUrl = await uploadToCloudinary(imageFile);
+    let imageUrl = process.env.DEFAULT_IMAGE;
+    if (req.files?.imageFile) {
+      imageUrl = await uploadToCloudinary(req.files.imageFile);
+    }
 
     const album = new Album({
       title,
@@ -100,5 +107,48 @@ export const deleteAlbum = async (req, res) => {
   } catch (error) {
     console.error(error);
     return errorResponse(res, "Album Delete Failed", 500);
+  }
+};
+
+export const addSongToAlbum = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { songId } = req.body;
+    const album = await Album.findById(id);
+    if (!album) return errorResponse(res, "Album Not Found", 404);
+    const exist = validateSongInAlbum(album, songId);
+    if (!exist) {
+      album.songs.push({
+        song: songId,
+      });
+      await Song.findByIdAndUpdate(songId, { albumId: id });
+      await album.save();
+      return successResponse(res, "Album Update Successful", 200, album);
+    }
+  } catch (error) {
+    console.error(error);
+    return errorResponse(res, "Album Update Failed");
+  }
+};
+
+export const removeSongFromAlbum = async (req, res) => {
+  try {
+    const { id, songId } = req.params;
+    const album = await Album.findById(id);
+    if (!album) return errorResponse(res, "Album Not Found", 404);
+    const exist = validateSongInAlbum(album, songId);
+    if (exist) {
+      const updatedAlbum = await Album.findByIdAndUpdate(
+        id,
+        {
+          $pull: { songs: { song: songId } },
+        },
+        { new: true },
+      );
+      return successResponse(res, "Album Update Success", 200, updatedAlbum);
+    } else return errorResponse(res, "Song Not Found in Album", 404);
+  } catch (error) {
+    console.error(error);
+    return errorResponse(res, "Album Update Failed");
   }
 };
