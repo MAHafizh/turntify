@@ -1,12 +1,14 @@
 import { Router } from "express";
-import { authCallback } from "../controller/auth.controller.js";
+import { authCallback, getMe } from "../controller/auth.controller.js";
+import { authUser } from "../middleware/auth.middleware.js";
 
-const router = Router()
+const router = Router();
 
-router.get('/', (req,res)=>{
-  res.send('Auth route')
-})
+router.get("/", (req, res) => {
+  res.send("Auth route");
+});
 
-router.post('/callback', authCallback)
+router.post("/callback", authCallback);
+router.get("/me", authUser, getMe);
 
-export default router
+export default router;
