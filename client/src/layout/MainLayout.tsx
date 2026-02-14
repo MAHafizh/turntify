@@ -27,7 +27,7 @@ export default function MainLayout() {
 
         {/* RIGHT */}
         <Panel defaultSize="15%" minSize="20%" maxSize="40%">
-          <div className="m-1 rounded-sm bg-zinc-900 h-[calc(100vh-130px)]">
+          <div className="m-1">
             <RightSidebar />
           </div>
         </Panel>

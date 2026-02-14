@@ -1,9 +1,8 @@
 import { axiosInstance } from "@/lib/axios";
-import type { Album, Song, Genre, Playlist } from "@/types";
+import type { Album, Genre, Playlist } from "@/types";
 import { create } from "zustand";
 
 interface MusicStore {
-  songs: Song[];
   albums: Album[];
   genres: Genre[];
   playlists: Playlist[];

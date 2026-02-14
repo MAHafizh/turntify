@@ -5,6 +5,6 @@ import { getAllUser } from "../controller/user.controller.js";
 
 const router = Router();
 
-router.get("/", requireAuth(), requireAdmin, getAllUser);
+router.get("/", requireAuth(), getAllUser); //nanti dubah ke admin, sebelum itu buat route friend dulu, baru fetch friend aja.
 
 export default router;

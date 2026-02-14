@@ -4,21 +4,19 @@ export interface Genre {
 }
 
 export interface Song {
-  song: {
-    _id: string;
-    title: string;
-    performer: string;
-    writer: string;
-    publisher: string;
-    album: string | null;
-    duration: number;
-    imageUrl: string;
-    audioUrl: string;
-    releaseYear: number;
-    genre: Genre[];
-    createdAt: Date;
-    updatedAt: Date;
-  };
+  _id: string;
+  title: string;
+  performer: string;
+  writer: string;
+  publisher: string;
+  album: string | null;
+  duration: number;
+  imageUrl: string;
+  audioUrl: string;
+  releaseYear: number;
+  genre: Genre[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Album {
@@ -41,4 +39,11 @@ export interface Playlist {
   imageUrl: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface User {
+  _id: string;
+  fullName: string;
+  clerkId: string;
+  imageUrl: string;
 }

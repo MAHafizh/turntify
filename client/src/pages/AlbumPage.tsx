@@ -23,7 +23,6 @@ export default function AlbumPage() {
   }, [fetchAlbumById, albumId]);
 
   if (isLoading) return null;
-  console.log(currentAlbum);
   return (
     <div className="h-[calc(100vh-130px)]">
       <ScrollArea className="h-[calc(100vh-130px)]">
@@ -85,11 +84,12 @@ export default function AlbumPage() {
                   <TableBody>
                     {currentAlbum?.songs.map((song, index) => (
                       <TableRow
-                        key={song.song._id}
-                        className="hover:bg-white/30 border-0"
+                        key={song._id}
+                        className="hover:bg-white/30 border-0 group"
                       >
                         <TableCell className="text-white/80 font-normal w-10">
-                          {index + 1}
+                          <span className="group-hover:hidden">{index + 1}</span>
+                          <Play className="h-4 w-4 hidden group-hover:block " />
                         </TableCell>
                         <TableCell className="w-60">
                           <div className="flex gap-2">
@@ -100,11 +100,9 @@ export default function AlbumPage() {
                             />
                             <div className="items-center justify-center">
                               <h1 className="text-white text-md">
-                                {song.song.title}
+                                {song.title}
                               </h1>
-                              <p className="text-white/80">
-                                {song.song.performer}
-                              </p>
+                              <p className="text-white/80">{song.performer}</p>
                             </div>
                           </div>
                         </TableCell>
@@ -112,14 +110,14 @@ export default function AlbumPage() {
                           1.900.000
                         </TableCell>
                         <TableCell className="hidden lg:table-cell text-white/80 font-normal">
-                          {
-                            new Date(song.song.createdAt)
-                              .toISOString()
-                              .split("T")[0]
-                          }
+                          {new Date(song.createdAt).toLocaleString("en-US", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
                         </TableCell>
                         <TableCell className="text-white/80 font-normal">
-                          {convertToMinute(song.song.duration)}
+                          {convertToMinute(song.duration)}
                         </TableCell>
                       </TableRow>
                     ))}

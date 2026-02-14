@@ -10,6 +10,6 @@ export const getAllUser = async (req, res) => {
     return successResponse(res, "User Retrieve Success", 200, user);
   } catch (error) {
     console.error(error);
-    return errorResponse(res, "User Retrieve Failed");
+    return errorResponse(res, "User Retrieve Failed", 500);
   }
 };

@@ -20,10 +20,8 @@ const albumSchema = new mongoose.Schema(
     },
     songs: [
       {
-        song: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Song",
-        },
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Song",
       },
     ],
   },

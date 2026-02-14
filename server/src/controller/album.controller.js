@@ -25,7 +25,7 @@ export const getAllAlbums = async (req, res) => {
 export const getAlbumById = async (req, res) => {
   try {
     const { id } = req.params;
-    const album = await Album.findById(id).populate("songs.song");
+    const album = await Album.findById(id).populate("songs");
     if (!album) {
       return errorResponse(res, "Albums Not Found", 404);
     }
