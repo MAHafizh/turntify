@@ -24,10 +24,10 @@ export default function AlbumPage() {
 
   if (isLoading) return null;
   return (
-    <div className="h-[calc(100vh-130px)]">
+    <div className="rounded-md">
       <ScrollArea className="h-[calc(100vh-130px)]">
         <div
-          className="absolute inset-0 bg-linear-to-b from-[#5038a0]/80 top-0 via-zinc-900/80 to-zinc-900 pointer-events-none h-[calc(100vh-130px)] rounded-sm"
+          className="absolute inset-0 bg-linear-to-b -mt-12 from-[#5038a0]/80 top-0 via-zinc-900/80 to-zinc-900 pointer-events-none h-[calc(100vh-125px)]"
           aria-hidden="true"
         />
         <div className="relative">
@@ -55,7 +55,7 @@ export default function AlbumPage() {
               </div>
             </div>
 
-            <div className="flex-col p-4 bg-linear-to-b from-black/20 via-black/35 to-black/60 backdrop-blur-sm h-[calc(100vh-362px)]">
+            <div className="flex-col p-4 bg-linear-to-b from-black/20 via-black/35 to-black/60 backdrop-blur-sm h-[calc(100vh-362px)] rounded-md">
               <Button className="rounded-full size-16 bg-green-500 hover:bg-green-400 hover:scale-110 transition-all">
                 <Play className="size-6 text-black" />
               </Button>
@@ -88,7 +88,9 @@ export default function AlbumPage() {
                         className="hover:bg-white/30 border-0 group"
                       >
                         <TableCell className="text-white/80 font-normal w-10">
-                          <span className="group-hover:hidden">{index + 1}</span>
+                          <span className="group-hover:hidden">
+                            {index + 1}
+                          </span>
                           <Play className="h-4 w-4 hidden group-hover:block " />
                         </TableCell>
                         <TableCell className="w-60">

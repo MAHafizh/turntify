@@ -3,6 +3,7 @@ import { Outlet } from "react-router";
 import LeftSidebar from "@/layout/components/LeftSidebar";
 import RightSidebar from "@/layout/components/RightSidebar";
 import { Group, Panel, Separator } from "react-resizable-panels";
+import Navbar from "@/components/Navbar";
 
 export default function MainLayout() {
   return (
@@ -18,7 +19,7 @@ export default function MainLayout() {
         {/* MAIN */}
         <Panel defaultSize="60%">
           <div className="m-1">
-            {/* <Navbar /> */}
+            <Navbar />
             <Outlet />
           </div>
         </Panel>

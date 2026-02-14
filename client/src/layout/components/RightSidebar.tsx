@@ -1,8 +1,6 @@
 import LoginPrompt from "@/components/LoginPrompt";
 import {
   Avatar,
-  AvatarBadge,
-  AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -10,6 +8,7 @@ import { useChatStore } from "@/stores/useChatStore";
 import { useUser } from "@clerk/clerk-react";
 import { Disc3, DotIcon, Music, Play, Users } from "lucide-react";
 import { useEffect } from "react";
+import { Link } from "react-router";
 
 export default function RightSidebar() {
   const { users, fetchUser } = useChatStore();
@@ -33,18 +32,15 @@ export default function RightSidebar() {
             </div>
           </div>
           <ScrollArea className="flex-1">
-            <div className="p-4 space-y-4">
+            <div className="py-4 space-y-4">
               {users.map((user) => (
                 <div
                   key={user._id}
-                  className="flex cursor-pointer hover:bg-zinc-800/50 rounded-lg p-3 gap-3 transition-colors group"
+                  className="flex cursor-pointer rounded-lg pt-3 gap-3 "
                 >
-                  <div className="flex">
+                  <div className="flex group transition-colors">
                     <Avatar className="size-10 block group-hover:hidden">
-                      <AvatarImage
-                        src={user.imageUrl}
-                        alt={user.fullName}
-                      />
+                      <AvatarImage src={user.imageUrl} alt={user.fullName} />
                     </Avatar>
                     <Play className="items-center mt-2 mx-2 hidden group-hover:block" />
                   </div>
@@ -53,17 +49,23 @@ export default function RightSidebar() {
                       {user.fullName}
                     </h1>
                     <h2 className="flex font-extralight text-sm  items-center">
-                      Now Playing <DotIcon /> <span>The Artist</span>
+                      <Link to={"/"} className="hover:underline">
+                        Now Playing{" "}
+                      </Link>{" "}
+                      <DotIcon />{" "}
+                      <Link to={"/"} className="hover:underline">
+                        The Artist
+                      </Link>
                     </h2>
                     <h2 className="text-sm font-extralight leading-3 flex gap-1.5">
                       <span>
                         <Disc3 className="size-3" />
                       </span>
-                      The Album
+                      <Link to={"/"} className="hover:underline">The Album</Link>
                     </h2>
                   </div>
                   <div className="flex-col ml-auto items-start">
-                    <Music className="size-3.5" />
+                    <Music className="size-3.5 text-emerald-600" />
                   </div>
                 </div>
               ))}
