@@ -30,7 +30,7 @@ const songSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Genre",
-        required: true
+        required: true,
       },
     ],
     duration: {
@@ -41,10 +41,10 @@ const songSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    albumId: {
+    createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Album",
-      required: false,
+      ref: "User",
+      required: true,
     },
   },
   { timestamps: true },

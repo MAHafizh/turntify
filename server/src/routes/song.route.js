@@ -1,6 +1,6 @@
 import { requireAuth } from "@clerk/express";
 import { Router } from "express";
-import { requireAdmin } from "../middleware/auth.middleware.js";
+import { authUser, requireAdmin } from "../middleware/auth.middleware.js";
 import {
   createSong,
   deleteSong,
@@ -14,13 +14,13 @@ import {
 
 const router = Router();
 
+router.use(requireAuth(), authUser);
 router.get("/", requireAdmin, getAllSong);
 router.get("/featured", getFeaturedSongs);
 router.get("/made-for-you", getMadeForYouSongs);
 router.get("/trending", getTrendingSongs);
 router.get("/:id", getSongById);
 
-router.use(requireAuth(), requireAdmin);
 router.post("/", createSong);
 router.delete("/:id", deleteSong);
 router.patch("/:id", updateSong);

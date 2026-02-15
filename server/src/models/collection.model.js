@@ -1,15 +1,21 @@
 import mongoose from "mongoose";
 
-const playlistSchema = new mongoose.Schema(
+const collectionSchema = new mongoose.Schema(
   {
     title: {
       type: String,
+      required: true,
+    },
+    type: {
+      type: String,
+      enum: ["album", "playlist"],
       required: true,
     },
     visibility: {
       type: String,
       enum: ["public", "private"],
       default: "public",
+      required: true,
     },
     songs: [
       {
@@ -32,18 +38,18 @@ const playlistSchema = new mongoose.Schema(
       maxlength: 300,
       required: false,
     },
-    owner: {
+    createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    collaborators: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     imageUrl: {
       type: String,
       required: true,
     },
+    collaborators: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true },
 );
 
-export const Playlist = mongoose.model("Playlist", playlistSchema);
+export const Collection = mongoose.model("Collection", collectionSchema);
