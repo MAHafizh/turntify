@@ -9,7 +9,6 @@ export default function LibraryAlbum() {
     fetchAlbums();
   }, [fetchAlbums]);
 
-  console.log({ albums });
   return (
     <div>
       {albums.map((album) => (
@@ -19,7 +18,7 @@ export default function LibraryAlbum() {
           className="flex my-2 gap-4 hover:bg-zinc-700 p-2 rounded-sm"
         >
           <img
-            src="https://res.cloudinary.com/dc4k7fypt/image/upload/v1770652127/image-music_okmrp5.jpg"
+            src={import.meta.env.VITE_DEFAULT_IMAGE}
             alt={album.title}
             className="size-11 rounded-md shrink-0 object-cover"
           />

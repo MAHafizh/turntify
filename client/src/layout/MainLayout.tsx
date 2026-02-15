@@ -10,7 +10,7 @@ export default function MainLayout() {
     <div className="h-screen bg-black text-white flex flex-col">
       <Group orientation="horizontal" className="flex-1 flex h-full p-2">
         {/* LEFT */}
-        <Panel defaultSize="30%" maxSize="40%" minSize="20%">
+        <Panel defaultSize="20%" maxSize="40%" minSize="10%">
           <LeftSidebar />
         </Panel>
 
@@ -18,16 +18,21 @@ export default function MainLayout() {
 
         {/* MAIN */}
         <Panel defaultSize="60%">
-          <div className="m-1">
+          <div className="m-1 min-w-0 min-h-0 flex flex-col h-full overflow-hidden relative rounded-md">
+            <div className="absolute inset-0 bg-linear-to-b from-orange-400 via-orange-600/70 to-black pointer-events-none" />
+
             <Navbar />
-            <Outlet />
+
+            <div className="flex-1 min-h-0 overflow-y-auto z-10 no-scrollbar">
+              <Outlet />
+            </div>
           </div>
         </Panel>
 
         <Separator className="w-1 bg-black rounded-md transition-colors" />
 
         {/* RIGHT */}
-        <Panel defaultSize="15%" minSize="20%" maxSize="40%">
+        <Panel defaultSize="15%" minSize="10%" maxSize="40%">
           <div className="m-1">
             <RightSidebar />
           </div>
