@@ -3,8 +3,8 @@ import userRoutes from "./user.route.js";
 import authRoutes from "./auth.route.js";
 import adminRoutes from "./admin.route.js";
 import songRoutes from "./song.route.js";
-// import statRoutes from "./stat.route.js";
-import collectionRoutes from "./collection.route.js"
+import albumRoutes from "./album.route.js";
+import playlistRoutes from "./playlist.route.js";
 
 const router = Router();
 
@@ -16,7 +16,7 @@ router.use("/users", userRoutes);
 router.use("/auth", authRoutes);
 router.use("/admin", adminRoutes);
 router.use("/songs", songRoutes);
-// router.use("/stats", statRoutes);
-router.use("/collections", collectionRoutes);
+router.use("/albums", albumRoutes)
+router.use("/playlists", playlistRoutes)
 
 export default router;

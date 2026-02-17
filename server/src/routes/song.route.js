@@ -22,7 +22,7 @@ router.get("/trending", getTrendingSongs);
 router.get("/:id", getSongById);
 
 router.post("/", createSong);
-router.delete("/:id", deleteSong);
 router.patch("/:id", updateSong);
+router.delete("/:id", deleteSong);
 
 export default router;

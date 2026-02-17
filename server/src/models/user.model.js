@@ -15,6 +15,10 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    playlists: [{ type: mongoose.Schema.Types.ObjectId, ref: "Playlist" }],
+    savedAlbums: [{ type: mongoose.Schema.Types.ObjectId, ref: "Album" }],
+    likedSongs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Song" }],
   },
   { timestamps: true },
 );

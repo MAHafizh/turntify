@@ -7,11 +7,11 @@ import { Genre } from "../models/genre.model.js";
 export const getAllSong = async (req, res) => {
   try {
     const songs = await Song.find().sort({ createdAt: -1 });
-    if (songs.length === 0) return errorResponse(res, "Songs is Empty", 200);
-    return successResponse(res, "Songs Retrieve Success", 200, songs);
+    if (songs.length === 0) return errorResponse(res, "Songs is empty", 404);
+    return successResponse(res, "Songs retrieve success", 200, songs);
   } catch (error) {
     console.error(error);
-    return errorResponse(res, "Songs Retrieve Failed", 500);
+    return errorResponse(res, "Songs retrieve failed", 500);
   }
 };
 
@@ -19,11 +19,11 @@ export const getSongById = async (req, res) => {
   try {
     const { id } = req.params;
     const song = await Song.findById(id);
-    if (!song) return errorResponse(res, "Song Not Found", 404);
-    return successResponse(res, "Song Retrieve Success", 200, song);
+    if (!song) return errorResponse(res, "Song not found", 404);
+    return successResponse(res, "Song retrieve success", 200, song);
   } catch (error) {
     console.error(error);
-    return errorResponse(res, "Song Retrieve Failed", 500);
+    return errorResponse(res, "Song retrieve failed", 500);
   }
 };
 
@@ -37,16 +37,14 @@ export const getFeaturedSongs = async (req, res) => {
         $project: {
           _id: 1,
           title: 1,
-          artist: 1,
           imageUrl: 1,
-          audioUrl: 1,
         },
       },
     ]);
-    return successResponse(res, "Featured Songs Retrieve Success", 200, songs);
+    return successResponse(res, "Featured songs retrieve success", 200, songs);
   } catch (error) {
     console.error(error);
-    return errorResponse(res, "Featured Songs Retrieve Failed", 500);
+    return errorResponse(res, "Featured songs retrieve failed", 500);
   }
 };
 
@@ -66,10 +64,10 @@ export const getTrendingSongs = async (req, res) => {
         },
       },
     ]);
-    return successResponse(res, "Trending Songs Retrieve Success", 200, songs);
+    return successResponse(res, "Trending songs retrieve success", 200, songs);
   } catch (error) {
     console.error(error);
-    return errorResponse(res, "Trending Songs Retrieve Failed", 500);
+    return errorResponse(res, "Trending songs retrieve failed", 500);
   }
 };
 
@@ -91,13 +89,13 @@ export const getMadeForYouSongs = async (req, res) => {
     ]);
     return successResponse(
       res,
-      "Made For You Songs Retrieve Success",
+      "Made For You songs retrieve success",
       200,
       songs,
     );
   } catch (error) {
     console.error(error);
-    return errorResponse(res, "Made For You Songs Retrieve Failed", 500);
+    return errorResponse(res, "Made For You songs retrieve failed", 500);
   }
 };
 
@@ -105,34 +103,34 @@ export const createSong = async (req, res) => {
   try {
     const userId = req.user._id;
     if (!req.files || !req.files.audioFile || !req.files.imageFile) {
-      return errorResponse(res, "Please Upload Files", 500);
+      return errorResponse(res, "Please upload files", 400);
     }
 
-    const { title, performer, writer, publisher, duration, releaseYear } =
-      req.body;
+    const {
+      title,
+      performer,
+      writer,
+      publisher,
+      duration,
+      releaseYear,
+      genre,
+    } = req.body;
 
-    let { genre } = req.body;
-
-    if (!Array.isArray(genre)) {
-      genre = [genre];
-    }
-
-    if (genre.length === 0) return errorResponse(res, "Genre is empty", 400);
+    if (!Array.isArray(genre) || genre.length === 0)
+      return errorResponse(res, "Genre must be at least 1", 400);
 
     const existingGenre = await Genre.find({
-      title: { $in: genre },
+      _id: { $in: genre },
     });
+
+    console.log(existingGenre);
 
     if (existingGenre.length !== genre.length) {
       return errorResponse(res, "Genre not valid", 400);
     }
 
-    const genreIds = existingGenre.map((item) => item._id);
-
-    const audioFile = req.files.audioFile;
-    const imageFile = req.files.imageFile;
-    const audioUrl = await uploadToCloudinary(audioFile);
-    const imageUrl = await uploadToCloudinary(imageFile);
+    const audioUrl = await uploadToCloudinary(req.files.audioFile);
+    const imageUrl = await uploadToCloudinary(req.files.imageFile);
 
     const song = new Song({
       title,
@@ -141,17 +139,17 @@ export const createSong = async (req, res) => {
       publisher,
       imageUrl,
       audioUrl,
-      genre: genreIds,
+      genre,
       duration,
       releaseYear,
       createdBy: userId,
     });
 
-    await song.save();
-    return successResponse(res, "Song Upload Success", 200, song);
+    const uploadedSong = await song.save();
+    return successResponse(res, "Song upload success", 200, uploadedSong);
   } catch (error) {
     console.error(error);
-    return errorResponse(res, "Song Upload Failed", 500);
+    return errorResponse(res, "Song upload failed", 500);
   }
 };
 
@@ -168,14 +166,15 @@ export const updateSong = async (req, res) => {
       duration,
       releaseYear,
       genre,
-    } = req.body;
+    } = req.body || {};
 
-    const song = await Song.findById(id);
-    if (!song) return errorResponse(res, "Song Not Found", 404);
+    let newImageUrl = null;
+    let oldImageUrl = null;
+    let newAudioUrl = null;
+    let oldAudioUrl = null;
 
-    if (!song.createdBy.equals(userId)) {
-      return errorResponse(res, "Unauthorized", 401);
-    }
+    const song = await Song.findOne({ _id: id, createdBy: userId });
+    if (!song) return errorResponse(res, "Song not found", 404);
 
     if (title !== undefined) song.title = title;
     if (performer !== undefined) song.performer = performer;
@@ -186,23 +185,29 @@ export const updateSong = async (req, res) => {
     if (genre !== undefined) song.genre = genre;
 
     if (req.files?.audioFile) {
-      await deleteFromCloudinary(song.audioUrl);
-      const audioUrl = await uploadToCloudinary(req.files.audioFile);
-      song.audioUrl = audioUrl;
+      oldAudioUrl = song.audioUrl;
+      newAudioUrl = await uploadToCloudinary(req.files.audioFile);
+      song.audioUrl = newAudioUrl;
     }
 
     if (req.files?.imageFile) {
-      await deleteFromCloudinary(song.imageUrl);
-      const imageUrl = await uploadToCloudinary(req.files.imageFile);
-      song.imageUrl = imageUrl;
+      oldImageUrl = song.imageUrl;
+      newImageUrl = await uploadToCloudinary(req.files.imageFile);
+      song.imageUrl = newImageUrl;
     }
 
-    await song.save();
-
-    return successResponse(res, "Song Update Success", 200, song);
+    const updatedSong = await song.save();
+    if (updatedSong) {
+      await deleteFromCloudinary(oldAudioUrl);
+      await deleteFromCloudinary(oldImageUrl);
+      return successResponse(res, "Song update success", 200, updatedSong);
+    } else {
+      await deleteFromCloudinary(newAudioUrl);
+      await deleteFromCloudinary(newImageUrl);
+    }
   } catch (error) {
     console.error(error);
-    return errorResponse(res, "Song Update Failed", 500);
+    return errorResponse(res, "Song update failed", 500);
   }
 };
 
@@ -210,19 +215,18 @@ export const deleteSong = async (req, res) => {
   try {
     const userId = req.user._id;
     const { id } = req.params;
-    const song = await Song.findById(id);
-    if (!song) return errorResponse(res, "Song Not Found", 404);
+    const song = await Song.findOne({ _id: id, createdBy: userId });
+    if (!song) return errorResponse(res, "Song not found", 404);
 
-    if (!song.createdBy.equals(userId)) {
-      return errorResponse(res, "Unauthorized", 401);
+    const deletedSong = await Song.findByIdAndDelete(id);
+
+    if (deletedSong) {
+      await deleteFromCloudinary(song.imageUrl);
+      await deleteFromCloudinary(song.audioUrl);
+      return successResponse(res, "Song delete success", 200);
     }
-
-    await deleteFromCloudinary(song.audioUrl);
-    await deleteFromCloudinary(song.imageUrl);
-    await Song.findByIdAndDelete(id);
-    return successResponse(res, "Song Delete Success", 200);
   } catch (error) {
     console.error(error);
-    return errorResponse(res, "Song Delete Failed", 500);
+    return errorResponse(res, "Song delete failed", 500);
   }
 };

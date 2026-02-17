@@ -1,10 +1,35 @@
 import { requireAuth } from "@clerk/express";
 import { Router } from "express";
-import { requireAdmin } from "../middleware/auth.middleware.js";
-import { getAllUser } from "../controller/user.controller.js";
+import { authUser, requireAdmin } from "../middleware/auth.middleware.js";
+import {
+  addFriend,
+  addLikedSong,
+  addPlaylist,
+  addSavedAlbum,
+  getAllUser,
+  getFriend,
+  removeFriend,
+  removeLikedSong,
+  removePlaylist,
+  removeSavedAlbum,
+} from "../controller/user.controller.js";
 
 const router = Router();
 
-router.get("/", requireAuth(), getAllUser); //nanti dubah ke admin, sebelum itu buat route friend dulu, baru fetch friend aja.
+router.use(requireAuth(), authUser);
+router.get("/", requireAdmin, getAllUser);
+
+router.post("/:albumId", addSavedAlbum);
+router.patch("/:albumId", removeSavedAlbum);
+
+router.post("/:playlistId", addPlaylist);
+router.patch("/:playlistId", removePlaylist);
+
+router.post("/:songId", addLikedSong);
+router.patch("/:songId", removeLikedSong);
+
+router.get("/friends", getFriend);
+router.post("/friends/:friendId", addFriend);
+router.patch("/friends/:friendId", removeFriend);
 
 export default router;
