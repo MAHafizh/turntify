@@ -11,7 +11,11 @@ const albumSchema = new mongoose.Schema({
     default: "private",
     required: true,
   },
-  songs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Song" }],
+  type: {
+    type: String,
+    enum: ["album", "ep", "single"],
+    required: true
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",

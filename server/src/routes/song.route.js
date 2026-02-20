@@ -10,17 +10,28 @@ import {
   getMadeForYouSongs,
   getTrendingSongs,
   updateSong,
+  addSongToAlbum,
+  removeSongFromAlbum,
+  addSongToPlaylist,
+  removeSongFromPlaylist,
 } from "../controller/song.controller.js";
 
 const router = Router();
 
-router.use(requireAuth(), authUser);
-router.get("/", requireAdmin, getAllSong);
 router.get("/featured", getFeaturedSongs);
 router.get("/made-for-you", getMadeForYouSongs);
 router.get("/trending", getTrendingSongs);
-router.get("/:id", getSongById);
 
+router.use(requireAuth(), authUser);
+
+router.post("/:songId/albums/:albumId", addSongToAlbum);
+router.delete("/:songId/albums/:albumId", removeSongFromAlbum);
+
+router.post("/:songId/playlists/:playlistId", addSongToPlaylist);
+router.delete("/:songId/playlists/:playlistId", removeSongFromPlaylist);
+
+router.get("/", requireAdmin, getAllSong);
+router.get("/:id", getSongById);
 router.post("/", createSong);
 router.patch("/:id", updateSong);
 router.delete("/:id", deleteSong);

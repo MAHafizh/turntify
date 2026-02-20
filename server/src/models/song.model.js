@@ -18,10 +18,6 @@ const songSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    imageUrl: {
-      type: String,
-      required: true,
-    },
     audioUrl: {
       type: String,
       required: true,
@@ -46,6 +42,7 @@ const songSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    album: {type: mongoose.Schema.Types.ObjectId, ref: "Album"},
     played: {
       type: Number,
       default: 0,

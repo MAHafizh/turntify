@@ -1,44 +1,66 @@
 import dotenv from "dotenv";
-import { errorResponse, successResponse } from "../utils/response.js";
+import mongoose from "mongoose";
+import { successResponse } from "../utils/response.js";
 import { Playlist } from "../models/playlist.model.js";
 import { uploadToCloudinary } from "../utils/UploadToCloudinary.js";
 import { deleteFromCloudinary } from "../utils/DeleteFromCloudinary.js";
-import { Song } from "../models/song.model.js";
 import { User } from "../models/user.model.js";
+import { AppError } from "../utils/ErrorHandler.js";
 
-export const getPlaylist = async (req, res) => {
+export const getPlaylist = async (req, res, next) => {
+  const userId = req.user._id;
   try {
-    const userId = req.user._id;
     const playlist = await Playlist.find({
       $or: [{ createdBy: userId }, { collaborators: userId }],
+    }).populate({
+      path: "songs",
+      populate: {
+        path: "song",
+        select: "title",
+      },
     });
-    if (playlist.length === 0)
-      return errorResponse(res, "Playlist is empty", 200);
-    return successResponse(res, "Playlist retrieve success", 200, playlist);
+    return successResponse(res, 200, playlist);
   } catch (error) {
-    console.error(error);
-    return errorResponse(res, "Playlist retrieve failed", 500);
+    next(error);
   }
 };
 
-export const getPlaylistById = async (req, res) => {
+export const getPlaylistById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const playlist = await Playlist.findById(id);
-    if (!playlist) return errorResponse(res, "playlist is empty", 200);
-    return successResponse(res, "Playlist retrieve success", 200, playlist);
+    const playlistExist = await Playlist.exists({ _id: id });
+    if (!playlistExist) throw new AppError("Playlist not found", 404);
+    const playlist = await Playlist.findById(id).populate({
+      path: "songs",
+      populate: {
+        path: "song",
+        select: "title duration",
+      },
+    });
+    let totalDuration = 0;
+    playlist.songs.map((s) => {
+      totalDuration += s.song.duration;
+    });
+    console.log(totalDuration);
+    return successResponse(res, 200, {
+      ...playlist.toObject(),
+      duration: totalDuration,
+    });
   } catch (error) {
-    console.error(error);
-    return errorResponse(res, "Playlist retrieve failed", 500);
+    next(error);
   }
 };
 
-export const createPlaylist = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const { title, description } = req.body;
-    let imageUrl = process.env.DEFAULT_IMAGE;
+export const createPlaylist = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
+  const userId = req.user._id;
+  const { title, description } = req.body || {};
+  let imageUrl = process.env.DEFAULT_IMAGE;
+
+  try {
+    if (!req.body) throw new AppError("You're not input anything", 400);
     if (req.files?.imageFile)
       imageUrl = await uploadToCloudinary(req.files.imageFile);
 
@@ -48,29 +70,37 @@ export const createPlaylist = async (req, res) => {
       createdBy: userId,
     });
     if (description !== undefined) playlist.description = description;
-    const createdPlaylist = await playlist.save();
-    return successResponse(
-      res,
-      "Playlist create success",
-      200,
-      createdPlaylist,
+
+    const createdPlaylist = await playlist.save({ session });
+
+    await User.findByIdAndUpdate(
+      userId,
+      {
+        $addToSet: { playlists: createdPlaylist._id },
+      },
+      { session },
     );
+    await session.commitTransaction();
+    session.endSession();
+    return successResponse(res, 201, createdPlaylist);
   } catch (error) {
-    console.error(error);
-    return errorResponse(res, "Playlist create failed", 500);
+    await session.abortTransaction();
+    if (imageUrl && imageUrl !== process.env.DEFAULT_IMAGE)
+      await deleteFromCloudinary(imageUrl);
+    next(error);
   }
 };
 
-export const updatePlaylist = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { title, visibility, description } = req.body || {};
-    const userId = req.user._id;
-    let newImageUrl = null;
-    let oldImageUrl = null;
+export const updatePlaylist = async (req, res, next) => {
+  const { id } = req.params;
+  const { title, visibility, description } = req.body || {};
+  const userId = req.user._id;
+  let newImageUrl;
+  let oldImageUrl;
 
+  try {
     const playlist = await Playlist.findOne({ _id: id, createdBy: userId });
-    if (!playlist) return errorResponse(res, "Playlist not found", 404);
+    if (!playlist) throw new AppError("Playlist not found", 404);
 
     if (title !== undefined) playlist.title = title;
     if (visibility !== undefined) playlist.visibility = visibility;
@@ -83,140 +113,67 @@ export const updatePlaylist = async (req, res) => {
     }
     const updatedPlaylist = await playlist.save();
     if (updatedPlaylist) {
-      if (oldImageUrl !== process.env.DEFAULT_IMAGE)
+      if (oldImageUrl && oldImageUrl !== process.env.DEFAULT_IMAGE)
         await deleteFromCloudinary(oldImageUrl);
-      return successResponse(
-        res,
-        "Playlist update success",
-        200,
-        updatedPlaylist,
-      );
-    } else await deleteFromCloudinary(newImageUrl);
-  } catch (error) {
-    console.error(error);
-    return errorResponse(res, "Playlist update failed", 500);
-  }
-};
-
-export const deletePlaylist = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user._id;
-    const playlist = await Playlist.findOne({ _id: id, createdBy: userId });
-    if (!playlist) return errorResponse(res, "Playlist not found", 404);
-    const deletedPlaylist = await Playlist.findByIdAndDelete(id);
-    if (deletedPlaylist) {
-      if (playlist.imageUrl !== process.env.DEFAULT_IMAGE)
-        await deleteFromCloudinary(playlist.imageUrl);
-      return successResponse(res, "Playlist delete success", 200);
+      return successResponse(res, 200, updatedPlaylist);
     }
   } catch (error) {
-    console.error(error);
-    return errorResponse(res, "Playlist delete failed", 500);
+    if (newImageUrl) await deleteFromCloudinary(newImageUrl);
+    next(error);
   }
 };
 
-export const addSongToPlaylist = async (req, res) => {
+export const deletePlaylist = async (req, res, next) => {
+  const { id } = req.params;
+  const userId = req.user._id;
   try {
-    const { playlistId, songId } = req.params;
-    const userId = req.user._id;
-
-    const exist = await Song.exists({ _id: songId });
-    if (!exist) return errorResponse(res, "Song not found", 404);
-
-    const playlist = await Playlist.findOneAndUpdate(
-      {
-        _id: playlistId,
-        $or: [{ createdBy: userId }, { collaborators: userId }],
-        "songs.song": { $ne: songId },
-      },
-      {
-        $push: {
-          songs: {
-            song: songId,
-            addedBy: userId,
-          },
-        },
-      },
-      {
-        new: true,
-      },
-    );
-
-    if (!playlist) return errorResponse(res, "Playlist or song not found", 404);
-    return successResponse(res, "Song added to playlist", 200, playlist);
+    const playlist = await Playlist.findOne({ _id: id, createdBy: userId });
+    if (!playlist) throw new AppError("Playlist not found", 404);
+    const deletedPlaylist = await Playlist.findByIdAndDelete(id);
+    if (deletedPlaylist) {
+      if (playlist.imageUrl && playlist.imageUrl !== process.env.DEFAULT_IMAGE)
+        await deleteFromCloudinary(playlist.imageUrl);
+      return successResponse(res, 200);
+    }
   } catch (error) {
-    console.error(error);
-    return errorResponse(res, "Playlist update failed", 500);
+    next(error);
   }
 };
 
-export const removeSongFromPlaylist = async (req, res) => {
+export const addCollaboratorToPlaylist = async (req, res, next) => {
+  const { playlistId, collaboratorId } = req.params;
+  const userId = req.user._id;
   try {
-    const { playlistId, songId } = req.params;
-    const userId = req.user._id;
-
-    const playlist = await Playlist.findOneAndUpdate(
-      {
-        _id: playlistId,
-        $or: [{ createdBy: userId }, { collaborators: userId }],
-        "songs.song": songId,
-      },
-      {
-        $pull: { songs: { song: songId } },
-      },
-      { new: true },
-    );
-
-    if (!playlist) return errorResponse(res, "Playlist or song not found", 404);
-    return successResponse(res, "Song remove to playlist", 200, playlist);
-  } catch (error) {
-    console.error(error);
-    return errorResponse(res, "Playlist update failed", 500);
-  }
-};
-
-export const addCollaboratorToPlaylist = async (req, res) => {
-  try {
-    const { playlistId, collaboratorId } = req.params;
-    const userId = req.user._id;
-
     const exist = await User.exists({ _id: collaboratorId });
-    if (!exist) return errorResponse(res, "User not found", 404);
+    if (!exist) throw new AppError("User not found", 404);
 
     const playlist = await Playlist.findOneAndUpdate(
       {
         _id: playlistId,
         createdBy: userId,
-        createdBy: { $ne: collaboratorId },
+        collaborators: { $ne: collaboratorId },
       },
       { $addToSet: { collaborators: collaboratorId } },
       { new: true },
     );
-
-    if (!playlist) return errorResponse(res, "Playlist not found", 404);
-    return successResponse(res, "Collaborator added", 200, playlist);
+    if (!playlist) throw new AppError("User already added", 400);
+    return successResponse(res, 200, playlist);
   } catch (error) {
-    console.error(error);
-    return errorResponse(res, "Playlist update failed", 500);
+    next(error);
   }
 };
 
-export const removeCollaboratorFromPlaylist = async (req, res) => {
+export const removeCollaboratorFromPlaylist = async (req, res, next) => {
+  const { playlistId, collaboratorId } = req.params;
+  const userId = req.user._id;
   try {
-    const { playlistId, collaboratorId } = req.params;
-    const userId = req.user._id;
-
     const playlist = await Playlist.findOneAndUpdate(
       { _id: playlistId, createdBy: userId, collaborators: collaboratorId },
       { $pull: { collaborators: collaboratorId } },
       { new: true },
     );
-
-    if (!playlist) return errorResponse(res, "Playlist not found", 404);
-    return successResponse(res, "Collaborator remove success", 200, playlist);
+    return successResponse(res, 200, playlist);
   } catch (error) {
-    console.error(error);
-    return errorResponse(res, "Playlist update failed", 500);
+    next(error);
   }
 };

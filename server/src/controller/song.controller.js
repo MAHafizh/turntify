@@ -3,31 +3,36 @@ import { uploadToCloudinary } from "../utils/UploadToCloudinary.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 import { deleteFromCloudinary } from "../utils/DeleteFromCloudinary.js";
 import { Genre } from "../models/genre.model.js";
+import dotenv from "dotenv";
+import { Album } from "../models/album.model.js";
+import { Playlist } from "../models/playlist.model.js";
+import { AppError } from "../utils/ErrorHandler.js";
+dotenv.config();
 
-export const getAllSong = async (req, res) => {
+export const getAllSong = async (req, res, next) => {
   try {
     const songs = await Song.find().sort({ createdAt: -1 });
-    if (songs.length === 0) return errorResponse(res, "Songs is empty", 404);
-    return successResponse(res, "Songs retrieve success", 200, songs);
+    if (songs.length === 0) throw new AppError("Songs is empty", 200);
+    return successResponse(res, 200, songs);
   } catch (error) {
-    console.error(error);
-    return errorResponse(res, "Songs retrieve failed", 500);
+    next(error);
   }
 };
 
-export const getSongById = async (req, res) => {
+export const getSongById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const song = await Song.findById(id);
-    if (!song) return errorResponse(res, "Song not found", 404);
-    return successResponse(res, "Song retrieve success", 200, song);
+    const song = await Song.findById(id)
+      .populate("genre", "title")
+      .populate("album", "title");
+    if (!song) throw new AppError("Song not found", 404);
+    return successResponse(res, 200, song);
   } catch (error) {
-    console.error(error);
-    return errorResponse(res, "Song retrieve failed", 500);
+    next(error);
   }
 };
 
-export const getFeaturedSongs = async (req, res) => {
+export const getFeaturedSongs = async (req, res, next) => {
   try {
     const songs = await Song.aggregate([
       {
@@ -41,37 +46,13 @@ export const getFeaturedSongs = async (req, res) => {
         },
       },
     ]);
-    return successResponse(res, "Featured songs retrieve success", 200, songs);
+    return successResponse(res, 200, songs);
   } catch (error) {
-    console.error(error);
-    return errorResponse(res, "Featured songs retrieve failed", 500);
+    next(error);
   }
 };
 
-export const getTrendingSongs = async (req, res) => {
-  try {
-    const songs = await Song.aggregate([
-      {
-        $sample: { size: 6 },
-      },
-      {
-        $project: {
-          _id: 1,
-          title: 1,
-          artist: 1,
-          imageUrl: 1,
-          audioUrl: 1,
-        },
-      },
-    ]);
-    return successResponse(res, "Trending songs retrieve success", 200, songs);
-  } catch (error) {
-    console.error(error);
-    return errorResponse(res, "Trending songs retrieve failed", 500);
-  }
-};
-
-export const getMadeForYouSongs = async (req, res) => {
+export const getTrendingSongs = async (req, res, next) => {
   try {
     const songs = await Song.aggregate([
       {
@@ -87,94 +68,86 @@ export const getMadeForYouSongs = async (req, res) => {
         },
       },
     ]);
-    return successResponse(
-      res,
-      "Made For You songs retrieve success",
-      200,
-      songs,
-    );
+    return successResponse(res, 200, songs);
   } catch (error) {
-    console.error(error);
-    return errorResponse(res, "Made For You songs retrieve failed", 500);
+    next(error);
   }
 };
 
-export const createSong = async (req, res) => {
+export const getMadeForYouSongs = async (req, res, next) => {
   try {
-    const userId = req.user._id;
-    if (!req.files || !req.files.audioFile || !req.files.imageFile) {
-      return errorResponse(res, "Please upload files", 400);
-    }
+    const songs = await Song.aggregate([
+      {
+        $sample: { size: 6 },
+      },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          artist: 1,
+          imageUrl: 1,
+          audioUrl: 1,
+        },
+      },
+    ]);
+    return successResponse(res, 200, songs);
+  } catch (error) {
+    next(error);
+  }
+};
 
-    const {
-      title,
-      performer,
-      writer,
-      publisher,
-      duration,
-      releaseYear,
-      genre,
-    } = req.body;
-
+export const createSong = async (req, res, next) => {
+  const userId = req.user._id;
+  if (!req.files.audioFile) {
+    throw new AppError("Please upload audio file", 400);
+  }
+  const { title, performer, writer, publisher, duration, releaseYear, genre } =
+    req.body;
+  let audioUrl;
+  try {
     if (!Array.isArray(genre) || genre.length === 0)
-      return errorResponse(res, "Genre must be at least 1", 400);
+      throw new AppError("Genre can't be empty", 400);
 
     const existingGenre = await Genre.find({
       _id: { $in: genre },
     });
-
-    console.log(existingGenre);
-
     if (existingGenre.length !== genre.length) {
-      return errorResponse(res, "Genre not valid", 400);
+      throw new AppError("Genre not valid", 400);
     }
 
-    const audioUrl = await uploadToCloudinary(req.files.audioFile);
-    const imageUrl = await uploadToCloudinary(req.files.imageFile);
+    audioUrl = await uploadToCloudinary(req.files.audioFile);
 
     const song = new Song({
       title,
       performer,
       writer,
       publisher,
-      imageUrl,
       audioUrl,
       genre,
       duration,
       releaseYear,
       createdBy: userId,
+      album: null,
     });
-
     const uploadedSong = await song.save();
-    return successResponse(res, "Song upload success", 200, uploadedSong);
+    return successResponse(res, 201, uploadedSong);
   } catch (error) {
-    console.error(error);
-    return errorResponse(res, "Song upload failed", 500);
+    if (audioUrl) await deleteFromCloudinary(audioUrl);
+    next(error);
   }
 };
 
-export const updateSong = async (req, res) => {
+export const updateSong = async (req, res, next) => {
+  const userId = req.user._id;
+  const { id } = req.params;
+  let newAudioUrl;
+  let oldAudioUrl;
+  const { title, performer, writer, publisher, duration, releaseYear, genre } =
+    req.body || {};
   try {
-    const userId = req.user._id;
-    const { id } = req.params;
-
-    const {
-      title,
-      performer,
-      writer,
-      publisher,
-      duration,
-      releaseYear,
-      genre,
-    } = req.body || {};
-
-    let newImageUrl = null;
-    let oldImageUrl = null;
-    let newAudioUrl = null;
-    let oldAudioUrl = null;
-
+    if (!req.body) throw new AppError("You are not changing anything", 200);
     const song = await Song.findOne({ _id: id, createdBy: userId });
-    if (!song) return errorResponse(res, "Song not found", 404);
+    if (!song) throw new AppError("Song not found", 404);
 
     if (title !== undefined) song.title = title;
     if (performer !== undefined) song.performer = performer;
@@ -190,43 +163,142 @@ export const updateSong = async (req, res) => {
       song.audioUrl = newAudioUrl;
     }
 
-    if (req.files?.imageFile) {
-      oldImageUrl = song.imageUrl;
-      newImageUrl = await uploadToCloudinary(req.files.imageFile);
-      song.imageUrl = newImageUrl;
-    }
-
     const updatedSong = await song.save();
-    if (updatedSong) {
-      await deleteFromCloudinary(oldAudioUrl);
-      await deleteFromCloudinary(oldImageUrl);
-      return successResponse(res, "Song update success", 200, updatedSong);
-    } else {
-      await deleteFromCloudinary(newAudioUrl);
-      await deleteFromCloudinary(newImageUrl);
-    }
+    await deleteFromCloudinary(oldAudioUrl);
+    return successResponse(res, 200, updatedSong);
   } catch (error) {
-    console.error(error);
-    return errorResponse(res, "Song update failed", 500);
+    await deleteFromCloudinary(newAudioUrl);
+    next(error);
   }
 };
 
-export const deleteSong = async (req, res) => {
+export const deleteSong = async (req, res, next) => {
+  const userId = req.user._id;
+  const { id } = req.params;
   try {
-    const userId = req.user._id;
-    const { id } = req.params;
     const song = await Song.findOne({ _id: id, createdBy: userId });
-    if (!song) return errorResponse(res, "Song not found", 404);
+    if (!song) throw new AppError("Song not found", 404);
 
-    const deletedSong = await Song.findByIdAndDelete(id);
+    await Song.findByIdAndDelete(id);
 
-    if (deletedSong) {
-      await deleteFromCloudinary(song.imageUrl);
-      await deleteFromCloudinary(song.audioUrl);
-      return successResponse(res, "Song delete success", 200);
-    }
+    await deleteFromCloudinary(song.audioUrl);
+    return successResponse(res, 200);
   } catch (error) {
-    console.error(error);
-    return errorResponse(res, "Song delete failed", 500);
+    next(error);
+  }
+};
+
+export const addSongToAlbum = async (req, res, next) => {
+  const { albumId, songId } = req.params;
+  try {
+    const albumExists = await Album.exists({ _id: albumId });
+    const songExists = await Song.exists({ _id: songId });
+    if (!albumExists || !songExists)
+      throw new AppError("Album or song not found", 404);
+
+    const updatedSong = await Song.findOneAndUpdate(
+      { _id: songId, album: null },
+      { album: albumId },
+      { new: true },
+    );
+
+    if (!updatedSong) {
+      throw new AppError("Song already has an album", 400);
+    }
+    return successResponse(res, 200, updatedSong);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const removeSongFromAlbum = async (req, res, next) => {
+  const { albumId, songId } = req.params;
+  try {
+    const albumExists = await Album.exists({ _id: albumId });
+    const songExists = await Song.exists({ _id: songId });
+    if (!albumExists || !songExists)
+      throw new AppError("Album or song not found", 404);
+
+    const updatedSong = await Song.findOneAndUpdate(
+      {
+        _id: songId,
+        album: { $ne: null },
+      },
+      { album: null },
+      { new: true },
+    );
+    if (!updatedSong) {
+      throw new AppError("Song does not have an album", 400);
+    }
+    return successResponse(res, 200, updatedSong);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const addSongToPlaylist = async (req, res, next) => {
+  const { playlistId, songId } = req.params;
+  const userId = req.user._id;
+  try {
+    const exist = await Song.exists({ _id: songId });
+    if (!exist) throw new AppError("Song not found", 404);
+    const playlist = await Playlist.findOneAndUpdate(
+      {
+        _id: playlistId,
+        $or: [{ createdBy: userId }, { collaborators: userId }],
+        "songs.song": { $ne: songId },
+      },
+      {
+        $push: {
+          songs: {
+            song: songId,
+            addedBy: userId,
+          },
+        },
+      },
+      {
+        new: true,
+      },
+    ).populate({
+      path: "songs",
+      select: "song",
+      populate: {
+        path: "song",
+        select: "title",
+      },
+    });
+    if (!playlist) throw new AppError("Song already added to playlist");
+    return successResponse(res, 200, playlist);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const removeSongFromPlaylist = async (req, res, next) => {
+  const { playlistId, songId } = req.params;
+  const userId = req.user._id;
+  try {
+    const playlist = await Playlist.findOneAndUpdate(
+      {
+        _id: playlistId,
+        $or: [{ createdBy: userId }, { collaborators: userId }],
+        "songs.song": songId,
+      },
+      {
+        $pull: { songs: { song: songId } },
+      },
+      { new: true },
+    ).populate({
+      path: "songs",
+      select: "song",
+      populate: {
+        path: "song",
+        select: "title",
+      },
+    });
+    if (!playlist) throw new AppError("Song already removed from playlist");
+    return successResponse(res, 200, playlist);
+  } catch (error) {
+    next(error);
   }
 };

@@ -5,6 +5,7 @@ import adminRoutes from "./admin.route.js";
 import songRoutes from "./song.route.js";
 import albumRoutes from "./album.route.js";
 import playlistRoutes from "./playlist.route.js";
+import genreRoutes from "./genre.route.js";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use("/admin", adminRoutes);
 router.use("/songs", songRoutes);
 router.use("/albums", albumRoutes)
 router.use("/playlists", playlistRoutes)
+router.use("/genres",genreRoutes)
 
 export default router;

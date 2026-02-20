@@ -7,29 +7,37 @@ import {
   addPlaylist,
   addSavedAlbum,
   getAllUser,
+  getCollection,
   getFriend,
+  getUserById,
   removeFriend,
   removeLikedSong,
   removePlaylist,
   removeSavedAlbum,
+  updateUser,
 } from "../controller/user.controller.js";
 
 const router = Router();
 
 router.use(requireAuth(), authUser);
-router.get("/", requireAdmin, getAllUser);
-
-router.post("/:albumId", addSavedAlbum);
-router.patch("/:albumId", removeSavedAlbum);
-
-router.post("/:playlistId", addPlaylist);
-router.patch("/:playlistId", removePlaylist);
-
-router.post("/:songId", addLikedSong);
-router.patch("/:songId", removeLikedSong);
 
 router.get("/friends", getFriend);
 router.post("/friends/:friendId", addFriend);
 router.patch("/friends/:friendId", removeFriend);
+
+router.post("/albums/:albumId", addSavedAlbum);
+router.patch("/albums/:albumId", removeSavedAlbum);
+
+router.post("/playlists/:playlistId", addPlaylist);
+router.patch("/playlists/:playlistId", removePlaylist);
+
+router.post("/songs/:songId", addLikedSong);
+router.patch("/songs/:songId", removeLikedSong);
+
+router.get("/collection", getCollection);
+
+router.get("/", requireAdmin, getAllUser);
+router.get("/:id", getUserById);
+router.patch("/:id", updateUser);
 
 export default router;
