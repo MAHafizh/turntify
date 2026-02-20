@@ -7,6 +7,8 @@ import dotenv from "dotenv";
 import { Album } from "../models/album.model.js";
 import { Playlist } from "../models/playlist.model.js";
 import { AppError } from "../utils/ErrorHandler.js";
+import mongoose from "mongoose";
+import { User } from "../models/user.model.js";
 dotenv.config();
 
 export const getAllSong = async (req, res, next) => {
@@ -101,12 +103,15 @@ export const createSong = async (req, res, next) => {
   if (!req.files.audioFile) {
     throw new AppError("Please upload audio file", 400);
   }
-  const { title, performer, writer, publisher, duration, releaseYear, genre } =
+  const { title, performer, writer, publisher, duration, releaseYear } =
     req.body;
+  let { genre } = req.body;
   let audioUrl;
   try {
-    if (!Array.isArray(genre) || genre.length === 0)
-      throw new AppError("Genre can't be empty", 400);
+    if (!Array.isArray(genre)) {
+      genre = [genre];
+    }
+    if (genre.length === 0) throw new AppError("Genre can't be empty", 400);
 
     const existingGenre = await Genre.find({
       _id: { $in: genre },
@@ -175,15 +180,28 @@ export const updateSong = async (req, res, next) => {
 export const deleteSong = async (req, res, next) => {
   const userId = req.user._id;
   const { id } = req.params;
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const song = await Song.findOne({ _id: id, createdBy: userId });
+    const song = await Song.findOneAndDelete(
+      { _id: id, createdBy: userId },
+      { session },
+    );
     if (!song) throw new AppError("Song not found", 404);
 
-    await Song.findByIdAndDelete(id);
+    await User.findByIdAndUpdate(
+      userId,
+      { $pull: { likedSongs: id } },
+      { session },
+    );
 
+    await session.commitTransaction();
+    session.endSession();
     await deleteFromCloudinary(song.audioUrl);
     return successResponse(res, 200);
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };

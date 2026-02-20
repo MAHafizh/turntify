@@ -19,6 +19,7 @@ export const getPlaylist = async (req, res, next) => {
         select: "title",
       },
     });
+    if (playlist.length === 0) throw new AppError("Playlist is empty", 200);
     return successResponse(res, 200, playlist);
   } catch (error) {
     next(error);
@@ -41,7 +42,6 @@ export const getPlaylistById = async (req, res, next) => {
     playlist.songs.map((s) => {
       totalDuration += s.song.duration;
     });
-    console.log(totalDuration);
     return successResponse(res, 200, {
       ...playlist.toObject(),
       duration: totalDuration,
@@ -126,16 +126,30 @@ export const updatePlaylist = async (req, res, next) => {
 export const deletePlaylist = async (req, res, next) => {
   const { id } = req.params;
   const userId = req.user._id;
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const playlist = await Playlist.findOne({ _id: id, createdBy: userId });
+    const playlist = await Playlist.findOneAndDelete(
+      { _id: id, createdBy: userId },
+      { session },
+    );
     if (!playlist) throw new AppError("Playlist not found", 404);
-    const deletedPlaylist = await Playlist.findByIdAndDelete(id);
-    if (deletedPlaylist) {
-      if (playlist.imageUrl && playlist.imageUrl !== process.env.DEFAULT_IMAGE)
-        await deleteFromCloudinary(playlist.imageUrl);
-      return successResponse(res, 200);
-    }
+
+    await User.findByIdAndUpdate(
+      userId,
+      { $pull: { playlists: id } },
+      { session },
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    if (playlist.imageUrl && playlist.imageUrl !== process.env.DEFAULT_IMAGE)
+      await deleteFromCloudinary(playlist.imageUrl);
+    return successResponse(res, 200);
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };

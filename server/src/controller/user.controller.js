@@ -77,53 +77,6 @@ export const getFriend = async (req, res, next) => {
   }
 };
 
-// export const getCollection = async (req, res, next) => {
-//   const userId = req.user._id;
-//   try {
-//     const user = await User.findById(userId)
-//       .select("savedAlbums playlists")
-//       .populate({
-//         path: "savedAlbums",
-//         select: "title imageUrl createdBy",
-//         populate: {
-//           path: "createdBy",
-//           select: "fullName",
-//         },
-//       })
-//       .populate({
-//         path: "playlists",
-//         select: "title imageUrl createdBy",
-//         populate: {
-//           path: "createdBy",
-//           select: "fullName",
-//         },
-//       });
-
-//     if (!user) throw new AppError("User not found", 404);
-
-//     const collection = [
-//       ...user.savedAlbums.map((a) => ({
-//         _id: a._id,
-//         title: a.title,
-//         imageUrl: a.imageUrl,
-//         creator: a.createdBy.fullName,
-//         type: "album",
-//       })),
-//       ...user.playlists.map((p) => ({
-//         _id: p._id,
-//         title: p.title,
-//         imageUrl: p.imageUrl,
-//         creator: p.createdBy.fullName,
-//         type: "playlist",
-//       })),
-//     ];
-
-//     return successResponse(res, 200, collection);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
 export const getCollection = async (req, res, next) => {
   const userId = req.user._id;
   try {

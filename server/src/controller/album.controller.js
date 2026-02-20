@@ -6,6 +6,7 @@ import { deleteFromCloudinary } from "../utils/DeleteFromCloudinary.js";
 import { Song } from "../models/song.model.js";
 import mongoose from "mongoose";
 import { AppError } from "../utils/ErrorHandler.js";
+import { User } from "../models/user.model.js";
 dotenv.config();
 
 export const getAlbum = async (req, res, next) => {
@@ -29,7 +30,11 @@ export const getAlbumById = async (req, res, next) => {
     songs.map((s) => {
       totalDuration += s.duration;
     });
-    return successResponse(res, 200, { ...album.toObject(), songs, duration: totalDuration });
+    return successResponse(res, 200, {
+      ...album.toObject(),
+      songs,
+      duration: totalDuration,
+    });
   } catch (error) {
     next(error);
   }
@@ -90,16 +95,34 @@ export const updateAlbum = async (req, res, next) => {
 export const deleteAlbum = async (req, res, next) => {
   const { id } = req.params;
   const userId = req.user._id;
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const album = await Album.findOne({ _id: id, createdBy: userId });
+    const album = await Album.findOneAndDelete(
+      { _id: id, createdBy: userId },
+      {
+        session,
+      },
+    );
     if (!album) throw new AppError("Album not found", 404);
-    const deletedAlbum = await Album.findByIdAndDelete(id);
-    if (deletedAlbum) {
-      if (album.imageUrl !== process.env.DEFAULT_IMAGE)
-        await deleteFromCloudinary(album.imageUrl);
-      return successResponse(res, 200);
-    }
+
+    await Song.find({ album: id });
+
+    await User.findByIdAndUpdate(
+      userId,
+      { $pull: { savedAlbums: id } },
+      { session },
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    if (album.imageUrl !== process.env.DEFAULT_IMAGE)
+      await deleteFromCloudinary(album.imageUrl);
+    return successResponse(res, 200);
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };
